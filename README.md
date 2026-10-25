@@ -1,42 +1,42 @@
-# Google Cast til HomewrightHQ
+# Google Cast for HomewrightHQ
 
-En ekstern integration til [HomewrightHQ](https://github.com/magnusdunker/homewrighthq), der styrer Chromecasts, Google- og Nest-højttalere og -skærme, Android TV og Cast-grupper som medieafspillere. Den taler Cast-protokollen direkte med enhederne på det lokale netværk, uden om Googles cloud.
+An external integration for [HomewrightHQ](https://github.com/magnusdunker/homewrighthq) that controls Chromecasts, Google and Nest speakers and displays, Android TV and Cast groups as media players. It speaks the Cast protocol directly with the devices on the local network, bypassing Google's cloud.
 
 ## Installation
 
-I HomewrightHQ: **Indstillinger → Integrationer → Fra GitHub**. Indsæt
+In HomewrightHQ: **Settings → Integrations → From GitHub**. Paste
 
 ```
 https://github.com/magnusdunker/homewrighthq-google-cast
 ```
 
-og tryk **Installér**. Tilføj derefter **Google Cast** under **Tilføj integration**. Formularen viser de enheder, der blev fundet på netværket. Står alle valgt, kommer enheder, der dukker op senere, også med. Når integrationen er installeret, foreslår HomewrightHQ den også selv, når den finder en Cast-enhed.
+and press **Install**. Then add **Google Cast** under **Add integration**. The form shows the devices found on the network. If all are selected, devices that show up later are included too. Once the integration is installed, HomewrightHQ also suggests it on its own when it finds a Cast device.
 
-Der er kun én opsætning, og den dækker alle enheder. Valget af enheder kan ændres under integrationens indstillinger.
+There is only one setup, and it covers all devices. The choice of devices can be changed in the integration's settings.
 
-### Enheder, som mDNS ikke finder
+### Devices that mDNS does not find
 
-Enhederne findes med mDNS (`_googlecast._tcp`), som kun virker på samme netværk. Står en enhed på et andet VLAN, eller kører HomewrightHQ i Docker uden host-netværk, så skriv dens adresse under **Ekstra adresser**, f.eks. `192.168.20.15` eller `tv.lan:8009`. Flere adresser adskilles med komma. Adressen prøves, når du gemmer, og integrationen prøver igen hvert 30. sekund, hvis enheden er væk ved opstart.
+Devices are found with mDNS (`_googlecast._tcp`), which only works on the same network. If a device is on another VLAN, or HomewrightHQ runs in Docker without host networking, enter its address under **Ekstra adresser** (extra addresses), e.g. `192.168.20.15` or `tv.lan:8009`. Separate several addresses with commas. The address is tried when you save, and the integration tries again every 30 seconds if the device is gone at startup.
 
-## Hvad du får
+## What you get
 
-Hver enhed bliver en enhed i HomewrightHQ med én medieafspiller. Navnet er det, enheden har i Google Home-appen.
+Each device becomes a device in HomewrightHQ with one media player. The name is the one the device has in the Google Home app.
 
-Tilstanden er:
+The state is:
 
-- **off**: der kører ingen app, eller enheden viser sin pauseskærm
-- **idle**: en app kører, men afspiller ikke noget
-- **playing**, **paused** og **buffering** efter mediets tilstand
+- **off**: no app is running, or the device shows its screensaver
+- **idle**: an app is running but not playing anything
+- **playing**, **paused** and **buffering** according to the media's state
 
-Attributterne følger Home Assistant: `volume_level`, `is_volume_muted`, `app_id`, `app_name`, `media_title`, `media_artist`, `media_album_name`, `media_series_title`, `media_content_id`, `media_content_type`, `media_duration`, `media_position`, `media_position_updated_at`, `entity_picture` og `supported_features`.
+The attributes follow Home Assistant: `volume_level`, `is_volume_muted`, `app_id`, `app_name`, `media_title`, `media_artist`, `media_album_name`, `media_series_title`, `media_content_id`, `media_content_type`, `media_duration`, `media_position`, `media_position_updated_at`, `entity_picture` and `supported_features`.
 
-Tjenesterne er:
+The services are:
 
-- `turn_on` starter Default Media Receiver, og `turn_off` stopper den app, der kører
-- `volume_set`, `volume_mute`, `volume_up` og `volume_down`
-- `media_play`, `media_pause`, `media_play_pause`, `media_stop` og `media_seek`
-- `media_next_track` og `media_previous_track`, når appen har en kø
-- `play_media` afspiller en URL i Default Media Receiver:
+- `turn_on` starts the Default Media Receiver, and `turn_off` stops the running app
+- `volume_set`, `volume_mute`, `volume_up` and `volume_down`
+- `media_play`, `media_pause`, `media_play_pause`, `media_stop` and `media_seek`
+- `media_next_track` and `media_previous_track`, when the app has a queue
+- `play_media` plays a URL in the Default Media Receiver:
 
 ```yaml
 action: media_player.play_media
@@ -44,38 +44,38 @@ target:
   entity_id: media_player.stue
 data:
   media_content_id: http://nas.lan/musik/sang.mp3
-  media_content_type: music        # eller en MIME-type som audio/mpeg
+  media_content_type: music        # or a MIME type such as audio/mpeg
   extra:
     title: Sang
     thumb: http://nas.lan/musik/cover.jpg
-    stream_type: LIVE              # til radio og andre livestreams
+    stream_type: LIVE              # for radio and other live streams
 ```
 
-Er `media_content_type` ikke en MIME-type, gættes den ud fra URL'ens endelse. Tjenesten svarer først, når enheden har indlæst mediet, og fejler, hvis enheden ikke kan afspille det.
+If `media_content_type` is not a MIME type, it is guessed from the URL's file extension. The service only responds once the device has loaded the media, and fails if the device cannot play it.
 
-Integrationen holder en forbindelse åben til hver enhed, og enhederne sender selv deres tilstand, når den ændrer sig. Mistes forbindelsen, bliver afspilleren utilgængelig, og integrationen forbinder igen efter 1 sekund og derefter med længere pauser op til 30 sekunder. Skifter enheden IP-adresse, opdager mDNS det.
+The integration keeps a connection open to each device, and the devices send their state themselves when it changes. If the connection is lost, the player becomes unavailable, and the integration reconnects after 1 second and then with longer pauses up to 30 seconds. If the device changes IP address, mDNS detects it.
 
-Integrationen husker den adresse, mDNS sidst gav hver enhed, og forbinder til den ved opstart. Så kommer en enhed med, selvom den ikke svarer på mDNS, når HomewrightHQ starter. Den spørger også på mDNS igen hvert 5. minut, så en enhed, der først svarer senere, bliver fundet.
+The integration remembers the address mDNS last gave each device, and connects to it at startup. That way a device is included even if it does not answer mDNS when HomewrightHQ starts. It also asks on mDNS again every 5 minutes, so a device that only answers later is found.
 
-## Udvikling
+## Development
 
-Bygget i Rust på SDK'en `thehome-plugin` fra [thehome-example-integration-rust](https://github.com/magnusdunker/homewrighthq-example-integration-rust).
+Built in Rust on the `thehome-plugin` SDK from [thehome-example-integration-rust](https://github.com/magnusdunker/homewrighthq-example-integration-rust).
 
-- `src/proto.rs`: Cast-beskeder (protobuf) og rammerne omkring dem
-- `src/conn.rs`: TLS til enhederne, som har selvsignerede certifikater
-- `src/device.rs`: forbindelsen til én enhed, tjenesterne og genforbindelse
-- `src/status.rs`: fra enhedens status til tilstand og attributter
-- `src/discovery.rs`: mDNS og enhedens `eureka_info`-side
-- `src/lib.rs`: opsætningen og forbindelsen til HomewrightHQ
-- `tests/`: tests mod en falsk Cast-enhed i `tests/fake` og en falsk HomewrightHQ i `tests/host`
+- `src/proto.rs`: Cast messages (protobuf) and the framing around them
+- `src/conn.rs`: TLS to the devices, which have self-signed certificates
+- `src/device.rs`: the connection to one device, the services and reconnecting
+- `src/status.rs`: from the device's status to state and attributes
+- `src/discovery.rs`: mDNS and the device's `eureka_info` page
+- `src/lib.rs`: the setup and the connection to HomewrightHQ
+- `tests/`: tests against a fake Cast device in `tests/fake` and a fake HomewrightHQ in `tests/host`
 
 ```
 cargo test
 cargo build --release
 ```
 
-En ny version udgives med et tag, f.eks. `git tag v0.2.0 && git push origin v0.2.0`. Workflowet bygger til Windows, Linux (x86_64 og arm64, statisk musl) og macOS og lægger binærerne på releasen.
+A new version is released with a tag, e.g. `git tag v0.2.0 && git push origin v0.2.0`. The workflow builds for Windows, Linux (x86_64 and arm64, static musl) and macOS and puts the binaries on the release.
 
-## Licens
+## License
 
 MIT
